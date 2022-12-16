@@ -1,4 +1,4 @@
-# 🚀 DEEP CTF. CTF Team Name Generator
+# 🚀 Deep CTF. CTF Team Name Generator
 
 So, you're looking for a name for your CTF team? You've come to the right place! This is an evening project I did to generate some names for my team, however I thought it might be useful for others as well. So here it is! 🔥
 
@@ -31,16 +31,10 @@ In this repo you also can find a `dataset_generator.py` script, which was used t
 
 ### Training accuracy over 20 epochs
 
-<!-- ![Training accuracy over 20 epochs](name_generator-acc-20-0.001-256-20-0.29112133383750916-v4.png) -->
-
-<p align="left">
-    <img src="name_generator-acc-20-0.001-256-20-0.29112133383750916-v4.png" width="75%" />
-</p>
+![Training accuracy over 20 epochs](name_generator-acc-20-0.001-256-20-0.29112133383750916-v4.png)
 
 ### Loss value over 20 epochs
 
-<!-- ![Loss value over 20 epochs](name_generator-loss-20-0.001-256-20-0.29112133383750916-v4.png) -->
+![Loss value over 20 epochs](name_generator-loss-20-0.001-256-20-0.29112133383750916-v4.png)
 
-<p align="left">
-    <img src="name_generator-loss-20-0.001-256-20-0.29112133383750916-v4.png" width="75%" />
-</p>
+
