@@ -12,6 +12,7 @@ Some useful links:
 
 import numpy as np
 import logging as log
+import argparse
 
 from alive_progress import alive_bar
 from matplotlib import pyplot as plt
@@ -21,7 +22,7 @@ from tensorflow import keras
 from typing import Tuple, List, Dict
 
 
-NUM_EPOCHS = 2
+NUM_EPOCHS = 20
 LEARNING_RATE = 0.001
 BATCH_SIZE = 256
 MODEL_VERSION = 'v1'
@@ -209,57 +210,62 @@ def plot_history(history, max_seq_length: int, latest_accuracy: float):
         dpi=1200)
 
 
+def parse_args() -> argparse.Namespace:
+    """Parse arguments.
+
+    Returns:
+        argparse.Namespace: Arguments.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--train', action='store_true', help='Run training')
+    parser.add_argument('--generate', action='store_true', help='Generate names')
+    parser.add_argument('--model_path', type=str, default='./name_generator{}.h5', help='Path to the model')
+    parser.add_argument('--num_names', type=int, default=10, help='Number of names to generate')
+    args = parser.parse_args()
+
+    return args
+
+
 def main():
     """Main function."""
+    args = parse_args()
+
     X, y, n_vocab, int_to_char, char_to_int, max_seq_length, concat_names, names = load_data()
-
     model = create_model(max_seq_length, n_vocab, y.shape[1])
-    # model.load_weights('models/weights-improvement-31-2.3486.h5')
 
-    # Save model on every epoch
-    filepath = 'models/weights-improvement-{epoch:02d}-{loss:.4f}.h5'
-    checkpoint = keras.callbacks.ModelCheckpoint(
-        filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
-    callbacks_list = [checkpoint]
+    if args.train:
+        # Save model on every epoch
+        filepath = 'models/weights-improvement-{epoch:02d}-{loss:.4f}.h5'
+        checkpoint = keras.callbacks.ModelCheckpoint(
+            filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
+        callbacks_list = [checkpoint]
+        history = model.fit(
+            X, y, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, validation_split=0.2,
+            callbacks=callbacks_list)
+        model.save(args.model_path.format('-train'))
 
-    history = model.fit(
-        X, y, epochs=NUM_EPOCHS, batch_size=BATCH_SIZE, validation_split=0.2,
-        callbacks=callbacks_list)
-    # Get latest accuracy and loss
-    latest_accuracy = history.history['val_accuracy'][-1]
-    model.save(
-        f'name_generator-{NUM_EPOCHS}-{LEARNING_RATE}-{BATCH_SIZE}-{max_seq_length}-{latest_accuracy}-{MODEL_VERSION}.h5')
+        # Get latest accuracy and loss
+        latest_accuracy = history.history['val_accuracy'][-1]
 
-    # Plot history
-    plot_history(history, max_seq_length, latest_accuracy)
+        # Plot history
+        plot_history(history, max_seq_length, latest_accuracy)
+    elif args.generate:
+        model.load_weights(args.model_path.format('-pretrained'))
+        names = generate_names(
+            args.num_names,  # Number of names to generate
+            model,           # Model to use for name generation
+            int_to_char,     # Integer to character mapping
+            char_to_int,     # Character to integer mapping
+            n_vocab,         # Number of unique characters
+            concat_names[-(max_seq_length - 1):] + '\n',  # Seed
+            max_seq_length,  # Max length of generated names
+            names            # Existing names (to avoid duplicates)
+        )
 
-    # Generate 10 random names
-    names = generate_names(
-        10,           # Number of names to generate
-        model,        # Model to use for name generation
-        int_to_char,  # Integer to character mapping
-        char_to_int,  # Character to integer mapping
-        n_vocab,      # Number of unique characters
-        concat_names[-(max_seq_length - 1):] + '\n',  # Seed
-        max_seq_length,  # Max length of generated names
-        names            # Existing names (to avoid duplicates)
-    )
-    with open('generated-names.txt', 'a+') as f:
         for name in names:
-            f.write(name + '\n')
-
-    # Interactive mode
-    # while True:
-    #     seed = input('Enter seed: ').lower()[0:max_length - 1]
-    #     # rjust seed with concatenated names
-    #     seed = concat_names[:max_length - len(seed) - 1] + '\n' + seed
-    #     if seed == 'exit':
-    #         break
-    #     else:
-    #         names = generate_names(
-    #             1, model, int_to_char, char_to_int, n,
-    #             seed, max_length, names)
-    #         print(names[0])
+            print(name)
+    else:
+        raise ValueError('Please specify --train or --generate')
 
 
 if __name__ == '__main__':
